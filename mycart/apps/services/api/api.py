@@ -2,7 +2,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from apps.services.api.serializers import *
-from apps.services.models import Category, Cart, Product
+from apps.services.models import Category, Cart, Product, Order
 
 
 @api_view(['GET'])
@@ -64,3 +64,41 @@ def cart(request):
         }
         return Response(response, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+@api_view(['GET', 'POST'])
+def order(request):
+    try:
+        if request.method == 'POST':
+            data = request.data
+            name = data.get('name', '')
+            last_name = data.get('lastName', '')
+            email = data.get('email', '')
+            cart_id = data.get('cartId', 1)
+            cart = Cart(id=cart_id)
+            order = Order(cart=cart, name=name, last_name=last_name, email=email)
+            order.save()
+
+            response = {
+                'code': 102,
+                'message': 'Object created',
+                'data': [],
+            }
+            return Response(response, status=status.HTTP_201_CREATED)
+        elif request.method == 'GET':
+            order = Order.objects.all().select_related('cart')
+            print(order.query)
+            order_serializer = OrderSerializer(order, many=True)
+            response = {
+                'code': 101,
+                'message': 'Successful',
+                'data': order_serializer.data,
+            }
+            return Response(response)
+    except Exception as e:
+        print(e)
+        response = {
+            'code': 501,
+            'message': 'Error interno del servidor',
+            'data': [],
+        }
+        return Response(response, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
