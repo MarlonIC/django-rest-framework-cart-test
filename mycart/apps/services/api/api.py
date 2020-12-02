@@ -8,11 +8,24 @@ from apps.services.models import Category, Cart, Product
 @api_view(['GET'])
 def categories(request):
     categories = Category.objects.all()
-    categories_serializer = CategorySerializer(categories, many=True)
+    data_serializer = CategorySerializer(categories, many=True)
+
+    price = request.query_params.get('price', None)
+    name = request.query_params.get('name', None)
+    if price is not None:
+        filter_price = 'price' if price == 'asc' else '-price'
+        products = Product.objects.order_by(filter_price)
+        data_serializer = ProductSerializer(products, many=True)
+
+    if name is not None:
+        filter_name = 'product' if name == 'asc' else '-product'
+        products = Product.objects.order_by(filter_name)
+        data_serializer = ProductSerializer(products, many=True)
+
     response = {
         'code': 101,
         'message': 'Successful',
-        'data': categories_serializer.data,
+        'data': data_serializer.data,
     }
     return Response(response)
 
